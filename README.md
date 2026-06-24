@@ -1,7 +1,7 @@
 # Réséda — Home Assistant integration
 
 <p align="center">
-  <img src="custom_components/reseda/logo.png" alt="Réséda" height="96">
+  <img src="custom_components/reseda/brand/logo.png" alt="Réséda" height="96">
 </p>
 
 A HACS custom integration that pulls electricity consumption from the
