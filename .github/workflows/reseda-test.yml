@@ -67,6 +67,8 @@ jobs:
             echo "dir=tests/components/reseda" >> "$GITHUB_OUTPUT"
           fi
       - name: pytest
+        env:
+          PYTHONPATH: .
         run: |
           pytest "${{ steps.layout.outputs.dir }}" \
             --cov=custom_components/reseda \
