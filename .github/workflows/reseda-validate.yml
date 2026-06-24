@@ -1,0 +1,38 @@
+name: Réséda — Validate
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - custom_components/reseda/**
+      - hacs.json
+      - .github/workflows/reseda-validate.yml
+  pull_request:
+    paths:
+      - custom_components/reseda/**
+      - hacs.json
+      - .github/workflows/reseda-validate.yml
+  schedule:
+    # Catch breakage when upstream HACS / hassfest rules change.
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration

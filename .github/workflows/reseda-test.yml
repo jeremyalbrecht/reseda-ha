@@ -1,0 +1,81 @@
+name: Réséda — Lint & test
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - custom_components/reseda/**
+      - tests/components/reseda/**
+      - tests/reseda/**
+      - .github/workflows/reseda-test.yml
+  pull_request:
+    paths:
+      - custom_components/reseda/**
+      - tests/components/reseda/**
+      - tests/reseda/**
+      - .github/workflows/reseda-test.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Ruff + codespell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv tool install ruff
+      - run: ruff check custom_components/reseda tests
+      - run: ruff format --check custom_components/reseda tests
+
+  test:
+    name: Tests (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install deps
+        # pytest-homeassistant-custom-component pins to a compatible HA core,
+        # so we only need to add it plus aiohttp/coverage.
+        run: |
+          uv pip install --system \
+            pytest \
+            pytest-asyncio \
+            pytest-cov \
+            pytest-homeassistant-custom-component \
+            aiohttp \
+            syrupy
+      - name: Pick test directory
+        id: layout
+        run: |
+          if [ -d tests/reseda ]; then
+            echo "dir=tests/reseda" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=tests/components/reseda" >> "$GITHUB_OUTPUT"
+          fi
+      - name: pytest
+        run: |
+          pytest "${{ steps.layout.outputs.dir }}" \
+            --cov=custom_components/reseda \
+            --cov-report=xml \
+            --cov-report=term-missing
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          flags: reseda
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}

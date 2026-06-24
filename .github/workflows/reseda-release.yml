@@ -1,0 +1,61 @@
+name: Réséda — Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag + version
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check manifest.json version matches tag
+        run: |
+          MANIFEST_VERSION=$(jq -r .version custom_components/reseda/manifest.json)
+          if [ "$MANIFEST_VERSION" != "${{ steps.tag.outputs.version }}" ]; then
+            echo "::error::manifest.json version ($MANIFEST_VERSION) does not match tag (${{ steps.tag.outputs.version }})."
+            echo "Bump custom_components/reseda/manifest.json before tagging."
+            exit 1
+          fi
+
+      - name: Build integration zip
+        # HACS doesn't require a zip — it installs straight from the repo — but
+        # attaching one is friendlier for manual installs.
+        run: |
+          cd custom_components/reseda
+          zip -r "$GITHUB_WORKSPACE/reseda-${{ steps.tag.outputs.version }}.zip" .
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          files: reseda-${{ steps.tag.outputs.version }}.zip

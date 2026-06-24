@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Connectez-vous avec votre compte monagence.reseda.fr.",
+        "data": {
+          "username": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      },
+      "select_pasc": {
+        "description": "Choisissez le contrat à suivre.",
+        "data": {
+          "pasc_id": "Contrat"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter",
+      "invalid_auth": "Identifiants invalides",
+      "no_pascs": "Aucun contrat n'est rattaché à ce compte.",
+      "unknown": "Erreur inattendue"
+    },
+    "abort": {
+      "already_configured": "Ce compte est déjà configuré"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Saisissez le prix de l'électricité au kWh. L'intégration en déduit des statistiques de coût (reseda:[PRM]_cost_total et variantes par poste) à brancher dans le tableau de bord Énergie via « Utiliser une statistique distincte pour les coûts ». Les jours déjà importés conservent leur prix d'origine ; seuls les nouveaux jours utilisent la nouvelle valeur.",
+        "data": {
+          "price_per_kwh": "Prix au kWh"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "consumption_total": {
+        "name": "Consommation totale"
+      },
+      "last_reading_date": {
+        "name": "Dernier relevé"
+      },
+      "prm": {
+        "name": "PRM"
+      },
+      "address": {
+        "name": "Adresse"
+      }
+    }
+  }
+}

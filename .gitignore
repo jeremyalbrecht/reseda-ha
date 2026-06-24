@@ -1,0 +1,53 @@
+# --------------------------------------------------------------------------
+# This repo is dual-purpose: locally it's a Home Assistant core fork (for
+# editor support and tests against the real HA test infra), but only the
+# HACS integration is published to GitHub. Deny by default; explicitly allow
+# the files that belong in the HACS repo.
+# --------------------------------------------------------------------------
+
+# Deny everything by default
+*
+
+# Allow integration source
+!custom_components/
+custom_components/*
+!custom_components/reseda/
+!custom_components/reseda/**
+
+# Allow tests for the integration only
+!tests/
+tests/*
+!tests/components/
+tests/components/*
+!tests/components/reseda/
+!tests/components/reseda/**
+
+# Allow CI workflows for the integration only
+!.github/
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/reseda-validate.yml
+!.github/workflows/reseda-test.yml
+!.github/workflows/reseda-release.yml
+
+# Allow repo-level metadata
+!hacs.json
+!README.md
+!info.md
+!LICENSE
+!.gitignore
+
+# Inside allowed dirs, ignore standard Python / HA artefacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+*.egg-info/
+.venv/
+.python-version

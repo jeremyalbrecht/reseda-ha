@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Sign in with your monagence.reseda.fr account.",
+        "data": {
+          "username": "Email address",
+          "password": "[%key:common::config_flow::data::password%]"
+        }
+      },
+      "select_pasc": {
+        "description": "Choose the contract to track.",
+        "data": {
+          "pasc_id": "Contract"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "no_pascs": "No contracts are linked to this account.",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Set the electricity price per kWh. The integration will derive cost statistics (reseda:[PRM]_cost_total and per-poste variants) you can wire into the Energy dashboard via 'Use a separate statistic for costs'. Days already imported keep their original price — only days from now on use the new value.",
+        "data": {
+          "price_per_kwh": "Price per kWh"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "consumption_total": {
+        "name": "Total consumption"
+      },
+      "last_reading_date": {
+        "name": "Last reading"
+      },
+      "prm": {
+        "name": "PRM"
+      },
+      "address": {
+        "name": "Address"
+      }
+    }
+  }
+}
