@@ -71,6 +71,7 @@ jobs:
           PYTHONPATH: .
         run: |
           pytest "${{ steps.layout.outputs.dir }}" \
+            --asyncio-mode=auto \
             --cov=custom_components/reseda \
             --cov-report=xml \
             --cov-report=term-missing

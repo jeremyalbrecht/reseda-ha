@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import logging
 
-from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import (
     StatisticData,
     StatisticMeanType,
@@ -13,7 +12,6 @@ from homeassistant.components.recorder.models import (
 )
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
-    get_last_statistics,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy
@@ -185,31 +183,21 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
             unit_of_measurement=unit,
         )
 
-        last_stat = await get_instance(self.hass).async_add_executor_job(
-            get_last_statistics, self.hass, 1, statistic_id, True, {"sum", "start"}
-        )
-
+        # Always recompute and upsert all points so that days initially stored
+        # with zero (API data not yet published) get corrected on later runs.
         running_sum = 0.0
-        last_start_ts: float | None = None
-        if last_stat and last_stat.get(statistic_id):
-            record = last_stat[statistic_id][0]
-            running_sum = float(record.get("sum") or 0.0)
-            last_start_ts = record.get("start")
-
-        new_points: list[StatisticData] = []
+        points: list[StatisticData] = []
         for day in sorted(day_to_value):
             start = datetime.combine(day, datetime.min.time(), tzinfo=TZ_PARIS)
             start = start.astimezone(dt_util.UTC)
-            if last_start_ts is not None and start.timestamp() <= last_start_ts:
-                continue
             value = day_to_value[day]
             running_sum += value
-            new_points.append(StatisticData(start=start, state=value, sum=running_sum))
+            points.append(StatisticData(start=start, state=value, sum=running_sum))
 
-        if not new_points:
+        if not points:
             return
-        _LOGGER.debug("Adding %d statistics for %s", len(new_points), statistic_id)
-        async_add_external_statistics(self.hass, metadata, new_points)
+        _LOGGER.debug("Upserting %d statistics for %s", len(points), statistic_id)
+        async_add_external_statistics(self.hass, metadata, points)
 
 
 def _summarise(
