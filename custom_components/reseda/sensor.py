@@ -58,7 +58,7 @@ SENSORS: tuple[ResedaSensorDescription, ...] = (
         key="address",
         translation_key="address",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: d.address.line if d.address else None,
+        value_fn=lambda d: f"{d.address.line}, {d.address.code_postal} {d.address.commune}" if d.address else None,
     ),
 )
 
