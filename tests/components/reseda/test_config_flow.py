@@ -13,7 +13,7 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from .conftest import PASC_ONE, PASC_TWO
 
-from tests.common import MockConfigEntry
+from .common import MockConfigEntry
 
 pytestmark = pytest.mark.usefixtures("enable_custom_integrations")
 

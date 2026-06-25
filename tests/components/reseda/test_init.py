@@ -7,7 +7,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 
-from tests.common import MockConfigEntry
+from .common import MockConfigEntry
 
 pytestmark = pytest.mark.usefixtures("recorder_mock", "enable_custom_integrations")
 

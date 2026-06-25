@@ -16,7 +16,7 @@ import pytest
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
-from tests.common import MockConfigEntry
+from .common import MockConfigEntry
 
 PASC_ONE = PascSummary(
     id="pasc-id-one",
