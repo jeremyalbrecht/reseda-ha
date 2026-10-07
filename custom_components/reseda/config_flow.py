@@ -50,6 +50,32 @@ _USER_SCHEMA = vol.Schema(
 _REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
 
 
+class ResedaOptionsFlow(OptionsFlow):
+    """Single-field options flow — just the €/kWh price."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show / save the price per kWh."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self.config_entry.options.get(CONF_PRICE_PER_KWH, 0.20)
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_PRICE_PER_KWH, default=current): NumberSelector(
+                    NumberSelectorConfig(
+                        min=0.001,
+                        max=10.0,
+                        step="any",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)
+
+
 class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Réséda."""
 
@@ -209,29 +235,3 @@ def _label_for(pasc: PascSummary) -> str:
     if pasc.activity:
         return f"Réséda {label} ({pasc.activity})"
     return f"Réséda {label}"
-
-
-class ResedaOptionsFlow(OptionsFlow):
-    """Single-field options flow — just the €/kWh price."""
-
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Show / save the price per kWh."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-
-        current = self.config_entry.options.get(CONF_PRICE_PER_KWH, 0.20)
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_PRICE_PER_KWH, default=current): NumberSelector(
-                    NumberSelectorConfig(
-                        min=0.001,
-                        max=10.0,
-                        step="any",
-                        mode=NumberSelectorMode.BOX,
-                    )
-                ),
-            }
-        )
-        return self.async_show_form(step_id="init", data_schema=schema)
