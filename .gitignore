@@ -37,6 +37,7 @@ tests/components/*
 !info.md
 !LICENSE
 !.gitignore
+!.ruff.toml
 
 # Inside allowed dirs, ignore standard Python / HA artefacts
 __pycache__/
