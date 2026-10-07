@@ -26,6 +26,7 @@ class MockConfigEntry(config_entries.ConfigEntry):
         unique_id=None,
         version=1,
     ) -> None:
+        """Initialize the mock config entry."""
         kwargs = {
             "data": data or {},
             "disabled_by": disabled_by,

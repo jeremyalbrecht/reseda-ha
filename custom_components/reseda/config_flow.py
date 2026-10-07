@@ -1,7 +1,5 @@
 """Config flow for the Réséda integration."""
 
-from __future__ import annotations
-
 import logging
 from typing import Any
 
@@ -111,9 +109,7 @@ class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
         """Trigger a reauth flow when stored credentials stop working."""
         self._username = entry_data.get(CONF_USERNAME)
         return await self.async_step_reauth_confirm()

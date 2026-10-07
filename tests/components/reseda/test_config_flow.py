@@ -11,9 +11,8 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from .conftest import PASC_ONE, PASC_TWO
-
 from .common import MockConfigEntry
+from .conftest import PASC_ONE, PASC_TWO
 
 pytestmark = pytest.mark.usefixtures("enable_custom_integrations")
 

@@ -10,9 +10,7 @@ from homeassistant.components.recorder.models import (
     StatisticMeanType,
     StatisticMetaData,
 )
-from homeassistant.components.recorder.statistics import (
-    async_add_external_statistics,
-)
+from homeassistant.components.recorder.statistics import async_add_external_statistics
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy
 from homeassistant.core import HomeAssistant
