@@ -1,9 +1,9 @@
 """DataUpdateCoordinator for the Réséda integration."""
 
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-import logging
 
 from homeassistant.components.recorder.models import (
     StatisticData,

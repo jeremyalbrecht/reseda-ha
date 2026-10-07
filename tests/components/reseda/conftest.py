@@ -4,6 +4,8 @@ from collections.abc import Generator
 from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from custom_components.reseda.api import Address, DailyReading, PascSummary
 from custom_components.reseda.const import (
     CONF_PASC_ID,
@@ -11,8 +13,6 @@ from custom_components.reseda.const import (
     CONF_REFRESH_TOKEN,
     DOMAIN,
 )
-import pytest
-
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 

@@ -1,12 +1,12 @@
 """Async client for the Réséda customer portal."""
 
 import base64
-from dataclasses import dataclass
-from datetime import UTC, date, datetime
 import hashlib
 import logging
 import secrets
 import time
+from dataclasses import dataclass
+from datetime import UTC, date, datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -400,7 +400,7 @@ def _parse_day(value: str | None) -> date | None:
     if not value:
         return None
     try:
-        return datetime.strptime(value, "%d/%m/%Y").date()
+        return datetime.strptime(value, "%d/%m/%Y").date()  # noqa: DTZ007
     except ValueError:
         return None
 
