@@ -49,6 +49,8 @@ _USER_SCHEMA = vol.Schema(
     }
 )
 
+_REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
+
 
 class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Réséda."""
@@ -106,6 +108,60 @@ class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=_USER_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, entry_data: dict[str, Any]
+    ) -> ConfigFlowResult:
+        """Trigger a reauth flow when stored credentials stop working."""
+        self._username = entry_data.get(CONF_USERNAME)
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Prompt the user for a new password (and optionally username)."""
+        errors: dict[str, str] = {}
+        entry = self._get_reauth_entry()
+        if user_input is not None:
+            username = user_input.get(CONF_USERNAME, entry.data[CONF_USERNAME])
+            password = user_input[CONF_PASSWORD]
+            client = ResedaClient(
+                async_get_clientsession(self.hass),
+                username,
+                password,
+            )
+            try:
+                await client.async_ensure_token()
+                pascs = await client.async_get_pascs()
+            except ResedaAuthError:
+                errors["base"] = "invalid_auth"
+            except ResedaConnectionError:
+                errors["base"] = "cannot_connect"
+            except ResedaApiError as err:
+                _LOGGER.warning("Unexpected API error during reauth: %s", err)
+                errors["base"] = "unknown"
+            except Exception:
+                _LOGGER.exception("Unexpected exception during reauth")
+                errors["base"] = "unknown"
+            else:
+                if not any(p.id == entry.data[CONF_PASC_ID] for p in pascs):
+                    errors["base"] = "pasc_missing"
+                else:
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data_updates={
+                            CONF_USERNAME: username,
+                            CONF_PASSWORD: password,
+                            CONF_REFRESH_TOKEN: client.refresh_token,
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=_REAUTH_SCHEMA,
+            description_placeholders={"username": entry.data[CONF_USERNAME]},
             errors=errors,
         )
 

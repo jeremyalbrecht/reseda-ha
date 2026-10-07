@@ -13,16 +13,24 @@
         "data": {
           "pasc_id": "Contract"
         }
+      },
+      "reauth_confirm": {
+        "description": "Your Réséda credentials for {username} need to be updated. Enter the current password.",
+        "data": {
+          "password": "[%key:common::config_flow::data::password%]"
+        }
       }
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
       "no_pascs": "No contracts are linked to this account.",
+      "pasc_missing": "The configured contract is not available on this account.",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
     }
   },
   "options": {

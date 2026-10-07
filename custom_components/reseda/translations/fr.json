@@ -13,16 +13,24 @@
         "data": {
           "pasc_id": "Contrat"
         }
+      },
+      "reauth_confirm": {
+        "description": "Les identifiants Réséda pour {username} doivent être mis à jour. Saisissez le mot de passe actuel.",
+        "data": {
+          "password": "Mot de passe"
+        }
       }
     },
     "error": {
       "cannot_connect": "Impossible de se connecter",
       "invalid_auth": "Identifiants invalides",
       "no_pascs": "Aucun contrat n'est rattaché à ce compte.",
+      "pasc_missing": "Le contrat configuré n'est pas disponible sur ce compte.",
       "unknown": "Erreur inattendue"
     },
     "abort": {
-      "already_configured": "Ce compte est déjà configuré"
+      "already_configured": "Ce compte est déjà configuré",
+      "reauth_successful": "La ré-authentification a réussi"
     }
   },
   "options": {

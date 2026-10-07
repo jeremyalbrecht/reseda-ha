@@ -13,16 +13,24 @@
         "data": {
           "pasc_id": "Contract"
         }
+      },
+      "reauth_confirm": {
+        "description": "Your Réséda credentials for {username} need to be updated. Enter the current password.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "no_pascs": "No contracts are linked to this account.",
+      "pasc_missing": "The configured contract is not available on this account.",
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Account is already configured"
+      "already_configured": "Account is already configured",
+      "reauth_successful": "Re-authentication was successful"
     }
   },
   "options": {
