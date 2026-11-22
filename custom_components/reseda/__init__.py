@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ResedaClient
-from .const import CONF_REFRESH_TOKEN
+from .const import CONF_PASC_REF, CONF_REFRESH_TOKEN
 from .coordinator import ResedaConfigEntry, ResedaCoordinator
 
 _PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -13,6 +13,11 @@ _PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ResedaConfigEntry) -> bool:
     """Set up Réséda from a config entry."""
+    # Early versions stored the session-scoped PASC ``id`` as unique_id; migrate
+    # to the stable contract reference so reauth and dedupe keep working.
+    stable_ref = entry.data.get(CONF_PASC_REF)
+    if stable_ref and entry.unique_id != stable_ref:
+        hass.config_entries.async_update_entry(entry, unique_id=stable_ref)
     session = async_get_clientsession(hass)
     client = ResedaClient(
         session,

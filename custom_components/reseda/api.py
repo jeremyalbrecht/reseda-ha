@@ -400,7 +400,7 @@ def _parse_day(value: str | None) -> date | None:
     if not value:
         return None
     try:
-        return datetime.strptime(value, "%d/%m/%Y").date()  # noqa: DTZ007
+        return datetime.strptime(value, "%d/%m/%Y").date()
     except ValueError:
         return None
 

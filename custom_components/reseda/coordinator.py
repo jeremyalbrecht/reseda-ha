@@ -29,7 +29,7 @@ from .api import (
     ResedaConnectionError,
 )
 from .const import (
-    CONF_PASC_ID,
+    CONF_PASC_REF,
     CONF_PRICE_PER_KWH,
     CONF_REFRESH_TOKEN,
     DOMAIN,
@@ -92,17 +92,22 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
         return _summarise(pasc, address, readings)
 
     async def _resolve_pasc(self) -> PascSummary:
-        """Find the PASC matching the configured ID; fall back to the first one."""
-        target_id = self.config_entry.data[CONF_PASC_ID]
+        """Find the PASC matching the configured reference.
+
+        The portal's PASC ``id`` is a session-scoped token and changes on every
+        login, so we match on the stable contract reference instead.
+        """
+        target_ref = self.config_entry.data.get(CONF_PASC_REF)
         pascs = await self.client.async_get_pascs()
-        for candidate in pascs:
-            if candidate.id == target_id:
-                return candidate
+        if target_ref:
+            for candidate in pascs:
+                if target_ref in (candidate.pds_reference, candidate.reference):
+                    return candidate
         if pascs:
             _LOGGER.warning(
                 "Configured PASC %s not found, falling back to %s",
-                target_id,
-                pascs[0].id,
+                target_ref,
+                pascs[0].pds_reference or pascs[0].reference,
             )
             return pascs[0]
         raise UpdateFailed("No PASCs available for this account")

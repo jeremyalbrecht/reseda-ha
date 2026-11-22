@@ -168,7 +168,8 @@ class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception during reauth")
                 errors["base"] = "unknown"
             else:
-                if not any(p.id == entry.data[CONF_PASC_ID] for p in pascs):
+                target_ref = entry.data.get(CONF_PASC_REF)
+                if not any(target_ref in (p.pds_reference, p.reference) for p in pascs):
                     errors["base"] = "pasc_missing"
                 else:
                     return self.async_update_reload_and_abort(
@@ -214,7 +215,9 @@ class ResedaConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="select_pasc", data_schema=schema)
 
     async def _async_create_entry(self, pasc: PascSummary) -> ConfigFlowResult:
-        await self.async_set_unique_id(pasc.id)
+        # The PASC ``id`` returned by the portal is a session token that rotates
+        # on every login, so use the stable contract reference as the unique id.
+        await self.async_set_unique_id(pasc.pds_reference or pasc.reference or pasc.id)
         self._abort_if_unique_id_configured()
         assert self._username is not None
         assert self._password is not None
