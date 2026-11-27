@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 from custom_components.reseda.const import CONF_PRICE_ENTITY, CONF_PRICE_PER_KWH
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.statistics import statistics_during_period
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import CoreState, HomeAssistant, State
 
 from .common import MockConfigEntry
 
@@ -242,3 +242,45 @@ async def test_cost_price_history_survives_recorder_purge(
 
     assert await hass.config_entries.async_remove(mock_config_entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_no_warning_while_starting(
+    hass: HomeAssistant,
+    mock_client: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A price entity not loaded yet at startup does not trigger a warning."""
+    hass.set_state(CoreState.starting)
+    await _setup(
+        hass,
+        mock_config_entry,
+        {CONF_PRICE_PER_KWH: 0.2, CONF_PRICE_ENTITY: PRICE_ENTITY},
+    )
+    assert "Price entity" not in caplog.text
+    assert await _cost_stats(hass) == [(1.3, 1.3), (1.0, 2.3)]
+
+
+async def test_price_store_cleared_when_entity_unset(
+    hass: HomeAssistant,
+    hass_storage: dict,
+    mock_client: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Removing the price entity forgets the prices learned from it."""
+    hass.states.async_set(PRICE_ENTITY, "0.3", {"valid_from": "2025-08-01"})
+    await _setup(
+        hass,
+        mock_config_entry,
+        {CONF_PRICE_PER_KWH: 0.2, CONF_PRICE_ENTITY: PRICE_ENTITY},
+    )
+    key = f"reseda.{mock_config_entry.entry_id}.prices"
+    assert hass_storage[key]["data"]["entity_id"] == PRICE_ENTITY
+
+    hass.config_entries.async_update_entry(
+        mock_config_entry, options={CONF_PRICE_PER_KWH: 0.2}
+    )
+    await mock_config_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert key not in hass_storage
+    assert await _cost_stats(hass) == [(1.3, 1.3), (1.0, 2.3)]

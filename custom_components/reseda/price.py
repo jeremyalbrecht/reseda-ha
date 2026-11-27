@@ -105,13 +105,38 @@ def _points_from_states(states: list[State]) -> list[PricePoint]:
 
 
 def _points_from_statistics(rows: list[dict]) -> list[PricePoint]:
+    """Turn hourly rows into points.
+
+    An hour whose min and max differ contains a price change, so its mean is a
+    blend of two prices. Such rows are skipped and the next steady hour's price
+    is backdated to the start of the blended hour (tariffs usually switch just
+    after midnight, so the new price applies to the whole day).
+    """
     points: list[PricePoint] = []
+    pending_start: datetime | None = None
     for row in rows:
         mean = row.get("mean")
         if mean is None or mean < 0:
             continue
-        points.append(PricePoint(dt_util.utc_from_timestamp(row["start"]), mean))
+        start = dt_util.utc_from_timestamp(row["start"])
+        low, high = row.get("min"), row.get("max")
+        if low is not None and high is not None and abs(high - low) > 1e-9:
+            if pending_start is None:
+                pending_start = start
+            continue
+        points.append(PricePoint(pending_start or start, mean))
+        pending_start = None
     return points
+
+
+def compact_points(points: list[PricePoint]) -> list[PricePoint]:
+    """Drop points that repeat the previous price (keep the earliest)."""
+    changes: list[PricePoint] = []
+    for point in sorted(points, key=lambda p: p.effective):
+        if changes and changes[-1].price == point.price:
+            continue
+        changes.append(point)
+    return changes
 
 
 def union_points(old: list[PricePoint], new: list[PricePoint]) -> list[PricePoint]:
@@ -132,13 +157,7 @@ def merge_points(
     if state_points:
         cutoff = min(p.effective for p in state_points)
         stat_points = [p for p in stat_points if p.effective < cutoff]
-    merged = sorted(stat_points + state_points, key=lambda p: p.effective)
-    changes: list[PricePoint] = []
-    for point in merged:
-        if changes and changes[-1].price == point.price:
-            continue
-        changes.append(point)
-    return changes
+    return compact_points(stat_points + state_points)
 
 
 async def async_get_price_points(
@@ -169,7 +188,7 @@ async def async_get_price_points(
             {entity_id},
             "hour",
             None,
-            {"mean"},
+            {"mean", "min", "max"},
         )
         stat_rows = list(stats.get(entity_id, []))
     except Exception:

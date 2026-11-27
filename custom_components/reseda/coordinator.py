@@ -13,7 +13,7 @@ from homeassistant.components.recorder.models import (
 from homeassistant.components.recorder.statistics import async_add_external_statistics
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -42,6 +42,7 @@ from .price import (
     PriceStore,
     PriceTimeline,
     async_get_price_points,
+    compact_points,
     merge_points,
     state_price,
     union_points,
@@ -83,6 +84,7 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
         )
         self.client = client
         self._price_fallback_warned = False
+        self._price_store_cleared = False
         self.price_store = PriceStore(hass, config_entry.entry_id)
 
     async def _async_update_data(self) -> ResedaData:
@@ -197,20 +199,27 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
         fixed: float | None = options.get(CONF_PRICE_PER_KWH) or None
         entity_id: str | None = options.get(CONF_PRICE_ENTITY)
         if not entity_id:
+            if not self._price_store_cleared:
+                # Forget prices learned for a previously configured entity.
+                self._price_store_cleared = True
+                await self.price_store.async_remove()
             return PriceTimeline([], fixed) if fixed else None
+        self._price_store_cleared = False
 
         state_points, stat_points = await async_get_price_points(
             self.hass, entity_id, _day_start(first_day), dt_util.utcnow()
         )
         stored = await self.price_store.async_load(entity_id)
-        known = union_points(stored, state_points)
+        known = compact_points(union_points(stored, state_points))
         if known != stored:
             await self.price_store.async_save(entity_id, known)
         points = merge_points(known, stat_points)
-        current_ok = state_price(self.hass.states.get(entity_id)) is not None
-        if current_ok:
+        current = self.hass.states.get(entity_id)
+        # During startup the price entity's integration may not be loaded yet.
+        starting = current is None and self.hass.state is not CoreState.running
+        if state_price(current) is not None:
             self._price_fallback_warned = False
-        elif not self._price_fallback_warned:
+        elif not self._price_fallback_warned and not starting:
             self._price_fallback_warned = True
             if points:
                 _LOGGER.warning(

@@ -8,6 +8,7 @@ from custom_components.reseda.price import (
     PricePoint,
     PriceTimeline,
     _effective_from,
+    _points_from_statistics,
     merge_points,
     state_price,
 )
@@ -77,4 +78,18 @@ def test_merge_prefers_states_and_dedupes() -> None:
         PricePoint(_dt(2025, 1, 1), 0.25),
         PricePoint(_dt(2025, 2, 1), 0.2016),
         PricePoint(_dt(2025, 7, 31, 22), 0.1952),
+    ]
+
+
+def test_statistics_skip_blended_hours() -> None:
+    """An hour containing a price change is not used as a price."""
+    start = _dt(2025, 1, 31, 23)  # 2025-02-01 00:00 Paris
+    rows = [
+        {"start": (start.timestamp() - 3600), "mean": 0.25, "min": 0.25, "max": 0.25},
+        {"start": start.timestamp(), "mean": 0.2017, "min": 0.2016, "max": 0.25},
+        {"start": start.timestamp() + 3600, "mean": 0.2016},
+    ]
+    assert _points_from_statistics(rows) == [
+        PricePoint(_dt(2025, 1, 31, 22), 0.25),
+        PricePoint(start, 0.2016),
     ]
