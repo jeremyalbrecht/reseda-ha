@@ -3,12 +3,12 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
-from custom_components.reseda.const import CONF_PRICE_ENTITY, CONF_PRICE_PER_KWH
 import pytest
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
+from custom_components.reseda.const import CONF_PRICE_ENTITY, CONF_PRICE_PER_KWH
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.core import HomeAssistant, State

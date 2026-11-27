@@ -2,10 +2,10 @@
 
 from unittest.mock import AsyncMock
 
-from custom_components.reseda.api import ResedaAuthError, ResedaConnectionError
-from custom_components.reseda.const import CONF_PASC_ID, DOMAIN
 import pytest
 
+from custom_components.reseda.api import ResedaAuthError, ResedaConnectionError
+from custom_components.reseda.const import CONF_PASC_ID, DOMAIN
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant

@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime
 
+import pytest
+
 from custom_components.reseda.price import (
     PricePoint,
     PriceTimeline,
@@ -9,8 +11,6 @@ from custom_components.reseda.price import (
     merge_points,
     state_price,
 )
-import pytest
-
 from homeassistant.core import State
 
 

@@ -15,10 +15,10 @@ State-derived points are also persisted (see ``PriceStore``) so the precise
 ``valid_from`` dates survive the recorder purging old states.
 """
 
+import logging
 from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import date, datetime
-import logging
 
 from homeassistant.components.recorder import get_instance, history, statistics
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -172,7 +172,7 @@ async def async_get_price_points(
             {"mean"},
         )
         stat_rows = list(stats.get(entity_id, []))
-    except Exception:  # noqa: BLE001 - history is best effort
+    except Exception:
         _LOGGER.debug("Could not read history of %s", entity_id, exc_info=True)
 
     if (current := hass.states.get(entity_id)) is not None:
