@@ -36,9 +36,10 @@
   "options": {
     "step": {
       "init": {
-        "description": "Saisissez le prix de l'électricité au kWh. L'intégration en déduit des statistiques de coût (reseda:[PRM]_cost_total et variantes par poste) à brancher dans le tableau de bord Énergie via « Utiliser une statistique distincte pour les coûts ». Les jours déjà importés conservent leur prix d'origine ; seuls les nouveaux jours utilisent la nouvelle valeur.",
+        "description": "Définissez le prix de l'électricité utilisé pour calculer la statistique de coût reseda:[PRM]_cost_total, à brancher dans le tableau de bord Énergie via « Utiliser une statistique distincte pour les coûts ». Vous pouvez aussi choisir une entité donnant le prix actuel en €/kWh (par exemple un capteur de tarif réglementé) : chaque jour est alors valorisé avec la valeur qu'avait l'entité ce jour-là, lue dans son historique. Le prix fixe s'applique aux jours antérieurs à la première valeur enregistrée de l'entité, et quand l'entité est indisponible sans historique.",
         "data": {
-          "price_per_kwh": "Prix au kWh"
+          "price_per_kwh": "Prix fixe au kWh",
+          "price_entity": "Entité de prix (€/kWh)"
         }
       }
     }
