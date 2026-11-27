@@ -136,3 +136,42 @@ async def test_options_flow_saves_price(
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == {"price_per_kwh": 0.2516}
+
+
+async def test_options_flow_saves_price_entity(
+    hass: HomeAssistant,
+    mock_client: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """The options flow stores an optional price entity next to the price."""
+    mock_config_entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"price_per_kwh": 0.194, "price_entity": "sensor.electricity_price"},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {
+        "price_per_kwh": 0.194,
+        "price_entity": "sensor.electricity_price",
+    }
+
+
+async def test_options_flow_clears_price_entity(
+    hass: HomeAssistant,
+    mock_client: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Leaving the entity empty removes it from the options."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={"price_per_kwh": 0.194, "price_entity": "sensor.electricity_price"},
+    )
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"price_per_kwh": 0.2}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {"price_per_kwh": 0.2}

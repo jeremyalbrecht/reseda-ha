@@ -26,3 +26,8 @@ CONF_PASC_ID = "pasc_id"
 CONF_PASC_REF = "pasc_ref"
 CONF_REFRESH_TOKEN = "refresh_token"
 CONF_PRICE_PER_KWH = "price_per_kwh"
+CONF_PRICE_ENTITY = "price_entity"
+
+# Attribute of the price entity giving the date the current price applies from
+# (exposed e.g. by the "Prix Énergie FR" integration).
+ATTR_VALID_FROM = "valid_from"

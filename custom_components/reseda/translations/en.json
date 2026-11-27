@@ -36,9 +36,10 @@
   "options": {
     "step": {
       "init": {
-        "description": "Set the electricity price per kWh. The integration will derive cost statistics (reseda:[PRM]_cost_total and per-poste variants) you can wire into the Energy dashboard via 'Use a separate statistic for costs'. Days already imported keep their original price — only days from now on use the new value.",
+        "description": "Set the electricity price used to derive the cost statistic reseda:[PRM]_cost_total, which you can wire into the Energy dashboard via 'Use a separate statistic for costs'. Optionally pick an entity holding the current price in €/kWh (for example a regulated-tariff sensor): each day is then priced with the value the entity had on that day, read from its recorded history. The fixed price is used for days before the entity's first recorded value and when the entity is unavailable with no history.",
         "data": {
-          "price_per_kwh": "Price per kWh"
+          "price_per_kwh": "Fixed price per kWh",
+          "price_entity": "Price entity (€/kWh)"
         }
       }
     }

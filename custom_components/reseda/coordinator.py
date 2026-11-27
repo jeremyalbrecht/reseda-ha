@@ -30,12 +30,21 @@ from .api import (
 )
 from .const import (
     CONF_PASC_REF,
+    CONF_PRICE_ENTITY,
     CONF_PRICE_PER_KWH,
     CONF_REFRESH_TOKEN,
     DOMAIN,
     HISTORY_BACKFILL_DAYS,
     SCAN_INTERVAL,
     TZ_PARIS,
+)
+from .price import (
+    PriceStore,
+    PriceTimeline,
+    async_get_price_points,
+    merge_points,
+    state_price,
+    union_points,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,6 +82,8 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
             config_entry=config_entry,
         )
         self.client = client
+        self._price_fallback_warned = False
+        self.price_store = PriceStore(hass, config_entry.entry_id)
 
     async def _async_update_data(self) -> ResedaData:
         try:
@@ -144,7 +155,6 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
             return
 
         slug = _slugify(pasc.pds_reference or pasc.reference or pasc.id)
-        price = self.config_entry.options.get(CONF_PRICE_PER_KWH)
         currency = self.hass.config.currency
 
         total_by_day: dict[date, float] = defaultdict(float)
@@ -158,14 +168,73 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
             unit_class=EnergyConverter.UNIT_CLASS,
             day_to_value=dict(total_by_day),
         )
-        if price:
-            await self._import_one_stream(
-                statistic_id=f"{DOMAIN}:{slug}_cost_total",
-                name=f"Réséda {pasc.pds_reference} cost",
-                unit=currency,
-                unit_class=None,
-                day_to_value={d: v * price for d, v in total_by_day.items()},
-            )
+        timeline = await self._async_price_timeline(min(total_by_day))
+        if timeline is None:
+            return
+        cost_by_day: dict[date, float] = {}
+        for day, kwh in total_by_day.items():
+            price = timeline.price_at(_day_start(day))
+            if price is not None:
+                cost_by_day[day] = kwh * price
+        await self._import_one_stream(
+            statistic_id=f"{DOMAIN}:{slug}_cost_total",
+            name=f"Réséda {pasc.pds_reference} cost",
+            unit=currency,
+            unit_class=None,
+            day_to_value=cost_by_day,
+        )
+
+    async def _async_price_timeline(self, first_day: date) -> PriceTimeline | None:
+        """Return the prices to apply, or None when no price is configured.
+
+        With a price entity, each day is priced with the value the entity had
+        at the start of that day (see ``price.py``). Days before the first
+        known value use the fixed ``price_per_kwh`` so previously imported
+        costs stay as they were; without a fixed price, the earliest known
+        entity value is used.
+        """
+        options = self.config_entry.options
+        fixed: float | None = options.get(CONF_PRICE_PER_KWH) or None
+        entity_id: str | None = options.get(CONF_PRICE_ENTITY)
+        if not entity_id:
+            return PriceTimeline([], fixed) if fixed else None
+
+        state_points, stat_points = await async_get_price_points(
+            self.hass, entity_id, _day_start(first_day), dt_util.utcnow()
+        )
+        stored = await self.price_store.async_load(entity_id)
+        known = union_points(stored, state_points)
+        if known != stored:
+            await self.price_store.async_save(entity_id, known)
+        points = merge_points(known, stat_points)
+        current_ok = state_price(self.hass.states.get(entity_id)) is not None
+        if current_ok:
+            self._price_fallback_warned = False
+        elif not self._price_fallback_warned:
+            self._price_fallback_warned = True
+            if points:
+                _LOGGER.warning(
+                    "Price entity %s is unavailable or not numeric; using its "
+                    "last recorded price %s",
+                    entity_id,
+                    points[-1].price,
+                )
+            elif fixed:
+                _LOGGER.warning(
+                    "Price entity %s is unavailable or not numeric and has no "
+                    "recorded history; using the fixed price %s",
+                    entity_id,
+                    fixed,
+                )
+            else:
+                _LOGGER.warning(
+                    "Price entity %s is unavailable or not numeric and no fixed "
+                    "price is set; skipping cost statistics",
+                    entity_id,
+                )
+        if not points and not fixed:
+            return None
+        return PriceTimeline(points, fixed)
 
     async def _import_one_stream(
         self,
@@ -191,8 +260,7 @@ class ResedaCoordinator(DataUpdateCoordinator[ResedaData]):
         running_sum = 0.0
         points: list[StatisticData] = []
         for day in sorted(day_to_value):
-            start = datetime.combine(day, datetime.min.time(), tzinfo=TZ_PARIS)
-            start = start.astimezone(dt_util.UTC)
+            start = _day_start(day)
             value = day_to_value[day]
             running_sum += value
             points.append(StatisticData(start=start, state=value, sum=running_sum))
@@ -225,6 +293,12 @@ def _summarise(
         last_reading_date=readings[-1].day,
         consumption_total_kwh=sum(latest_per_poste.values()),
     )
+
+
+def _day_start(day: date) -> datetime:
+    """Midnight (Europe/Paris) of ``day``, in UTC."""
+    start = datetime.combine(day, datetime.min.time(), tzinfo=TZ_PARIS)
+    return start.astimezone(dt_util.UTC)
 
 
 def _slugify(value: str) -> str:

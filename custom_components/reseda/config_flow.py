@@ -15,6 +15,8 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -33,6 +35,7 @@ from .api import (
 from .const import (
     CONF_PASC_ID,
     CONF_PASC_REF,
+    CONF_PRICE_ENTITY,
     CONF_PRICE_PER_KWH,
     CONF_REFRESH_TOKEN,
     DOMAIN,
@@ -51,12 +54,12 @@ _REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
 
 
 class ResedaOptionsFlow(OptionsFlow):
-    """Single-field options flow — just the €/kWh price."""
+    """Options flow — fixed €/kWh price and optional price entity."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show / save the price per kWh."""
+        """Show / save the price per kWh and the optional price entity."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -70,6 +73,16 @@ class ResedaOptionsFlow(OptionsFlow):
                         step="any",
                         mode=NumberSelectorMode.BOX,
                     )
+                ),
+                vol.Optional(
+                    CONF_PRICE_ENTITY,
+                    description={
+                        "suggested_value": self.config_entry.options.get(
+                            CONF_PRICE_ENTITY
+                        )
+                    },
+                ): EntitySelector(
+                    EntitySelectorConfig(domain=["sensor", "input_number"])
                 ),
             }
         )

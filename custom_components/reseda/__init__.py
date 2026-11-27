@@ -7,6 +7,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ResedaClient
 from .const import CONF_PASC_REF, CONF_REFRESH_TOKEN
 from .coordinator import ResedaConfigEntry, ResedaCoordinator
+from .price import PriceStore
 
 _PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -38,6 +39,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ResedaConfigEntry) -> b
     return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: ResedaConfigEntry) -> None:
+    """Delete the persisted price history."""
+    await PriceStore(hass, entry.entry_id).async_remove()
+
+
 async def _async_options_updated(hass: HomeAssistant, entry: ResedaConfigEntry) -> None:
-    """Re-import statistics so a new price applies immediately to new days."""
+    """Re-import statistics so a new price setting applies immediately."""
     await entry.runtime_data.async_request_refresh()
